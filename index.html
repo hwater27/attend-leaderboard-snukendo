@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SNUKendo Attendance Leaderboard</title>
+    <meta name="description" content="Practice attendance ranking for Snukendo Kendo Club" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="bg" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <div class="container">
+        <h1 class="title">
+          <span class="accent">SNUKendo</span> Attendance Leaderboard
+        </h1>
+        <p class="subtitle">Practice participation ranking from Google Sheets</p>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="controls">
+        <div class="config-hint" id="configHint" hidden>
+          Configure your Google Sheet in <code>config.js</code> and refresh.
+        </div>
+        <div class="actions">
+          <label class="input-group">
+            <span>Search</span>
+            <input id="searchInput" type="search" placeholder="Find a member" autocomplete="off" />
+          </label>
+          <button id="refreshBtn" class="btn" type="button">Refresh</button>
+        </div>
+      </section>
+
+      <section class="podium" id="podium" aria-live="polite"></section>
+
+      <section class="board">
+        <div class="card">
+          <div class="card-header">
+            <div class="left">
+              <h2 class="card-title">Leaderboard</h2>
+              <p class="card-subtitle" id="rowCount"></p>
+            </div>
+            <div class="right">
+              <span class="updated" id="updatedAt"></span>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="table" role="table" aria-label="Attendance leaderboard">
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Member</th>
+                  <th scope="col">Attendance</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                <tr class="skeleton"><td colspan="3">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <span>Built for SNU Kendo Club</span>
+        <a href="https://github.com" target="_blank" rel="noreferrer">GitHub</a>
+        <span>•</span>
+        <a href="https://www.netlify.com/" target="_blank" rel="noreferrer">Netlify</a>
+      </div>
+    </footer>
+
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+  </html>
+
