@@ -173,5 +173,15 @@ body {
 
 @media (max-width: 720px) {
   .podium { grid-template-columns: 1fr; }
+  .site-header { padding: 32px 0 16px; }
+  .controls { flex-direction: column; align-items: stretch; gap: 8px; }
+  .actions { flex-wrap: wrap; gap: 8px; }
+  .input-group { width: 100%; }
+  .input-group input { width: 100%; }
+  .btn { width: 100%; }
+  .card-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .updated { font-size: 12px; }
+  .table thead th { font-size: 12px; padding: 8px 10px; }
+  .table tbody td { padding: 10px 10px; }
 }
 
