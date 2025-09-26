@@ -179,6 +179,22 @@ body {
 .site-footer a { color: var(--muted); text-decoration: none; }
 .site-footer a:hover { color: var(--text); }
 
+/* Pager */
+.pager { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 4px 0; }
+.pager .page-btn {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pager .page-btn[aria-current="page"] {
+  background: linear-gradient(135deg, var(--accent), #4f46e5);
+  border-color: transparent;
+}
+
 @media (max-width: 720px) {
   .podium { grid-template-columns: 1fr; }
   .site-header { padding: 32px 0 16px; }

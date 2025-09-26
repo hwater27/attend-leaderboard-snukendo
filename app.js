@@ -11,6 +11,45 @@
   const configHint = g('#configHint');
   const modeSwitch = g('#modeSwitch');
   const scoreHeader = g('#scoreHeader');
+  const pager = g('#pager');
+
+  const PAGE_SIZE = 10;
+  let currentPage = 1;
+
+  function totalPages(count) {
+    return Math.max(1, Math.ceil(count / PAGE_SIZE));
+  }
+
+  function renderPager(total) {
+    if (!pager) return;
+    pager.innerHTML = '';
+    if (total <= PAGE_SIZE) return;
+    const pages = totalPages(total);
+    for (let p = 1; p <= pages; p++) {
+      const start = (p - 1) * PAGE_SIZE + 1;
+      const end = Math.min(p * PAGE_SIZE, total);
+      const btn = document.createElement('button');
+      btn.className = 'page-btn';
+      btn.type = 'button';
+      btn.textContent = `${start}-${end}`;
+      if (p === currentPage) btn.setAttribute('aria-current', 'page');
+      btn.addEventListener('click', () => setPage(p));
+      pager.appendChild(btn);
+    }
+  }
+
+  function setPage(page) {
+    currentPage = Math.max(1, page);
+    if (cachedEntries) {
+      let entries = filterEntries(cachedEntries, searchInput.value || '');
+      const ranked = rankEntries(entries, currentMode());
+      const pages = totalPages(ranked.length);
+      if (currentPage > pages) currentPage = pages;
+      renderPodium(ranked);
+      renderTable(ranked);
+      renderPager(ranked.length);
+    }
+  }
 
   if (cfg.TITLE) {
     document.title = cfg.TITLE;
@@ -128,6 +167,8 @@
   function renderTable(ranked) {
     tableBody.innerHTML = '';
     let count = 0;
+    const startIdx = (currentPage - 1) * PAGE_SIZE;
+    const endIdx = Math.min(startIdx + PAGE_SIZE, ranked.length);
     // Determine separator position only in +Events mode
     let insertAt = -1;
     const threshold = Number(cfg.THRESHOLD);
@@ -138,7 +179,7 @@
       if (!(insertAt > 0 && insertAt < ranked.length)) insertAt = -1; // must be between two people
     }
 
-    for (let i = 0; i < ranked.length; i++) {
+    for (let i = startIdx; i < endIdx; i++) {
       const item = ranked[i];
       if (i === insertAt) {
         const sep = document.createElement('tr');
@@ -199,8 +240,12 @@
       const query = searchInput.value || '';
       entries = filterEntries(entries, query);
       const ranked = rankEntries(entries, currentMode());
+      // Clamp current page within bounds in case the result count changed
+      const pages = totalPages(ranked.length);
+      if (currentPage > pages) currentPage = pages;
       renderPodium(ranked);
       renderTable(ranked);
+      renderPager(ranked.length);
       updatedAt.textContent = 'Updated ' + new Date().toLocaleString();
       updateScoreHeader();
     } catch (err) {
@@ -210,7 +255,7 @@
     }
   }
 
-  searchInput.addEventListener('input', () => refresh());
+  searchInput.addEventListener('input', () => { currentPage = 1; refresh(); });
   refreshBtn.addEventListener('click', () => refresh());
 
   if (modeSwitch) {
@@ -221,10 +266,12 @@
       updateScoreHeader();
       // Re-render using cached data
       if (cachedEntries) {
+        currentPage = 1;
         let entries = filterEntries(cachedEntries, searchInput.value || '');
         const ranked = rankEntries(entries, currentMode());
         renderPodium(ranked);
         renderTable(ranked);
+        renderPager(ranked.length);
       } else {
         refresh();
       }
