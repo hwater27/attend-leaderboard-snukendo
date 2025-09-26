@@ -101,7 +101,7 @@
       const card = document.createElement('div');
       card.className = 'podium-card';
       const scoreHtml = (currentMode() === 'plus')
-        ? `<span class="score-total">${item.effective}</span><span class="score-details">(${item.attendance}+${item.events || 0})</span>`
+        ? `<span class="score-total">${item.effective}</span><span class="score-details">(${item.attendance}+<span class=\"events-count\">${item.events || 0}</span>)</span>`
         : `<span class="score-total">${item.effective}</span>`;
       card.innerHTML = `
         <div class="medal ${medalClass[i]}" aria-hidden="true"></div>
@@ -139,7 +139,7 @@
       }
       const tr = document.createElement('tr');
       const scoreHtml = (currentMode() === 'plus')
-        ? `<span class="score-total">${item.effective}</span><span class="score-details">(${item.attendance}+${item.events || 0})</span>`
+        ? `<span class="score-total">${item.effective}</span><span class="score-details">(${item.attendance}+<span class=\"events-count\">${item.events || 0}</span>)</span>`
         : `<span class="score-total">${item.effective}</span>`;
       tr.innerHTML = `
         <td class="rank-cell">${item.rank}</td>

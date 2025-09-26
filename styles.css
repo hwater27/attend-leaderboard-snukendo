@@ -108,6 +108,7 @@ body {
 .podium .score { font-weight: 800; font-size: 28px; letter-spacing: -0.02em; }
 .score-total { color: var(--text); }
 .score-details { color: var(--muted); margin-left: 6px; font-weight: 700; font-size: 0.8em; }
+.score-details .events-count { color: var(--warning); }
 
 .podium .medal { position: absolute; top: -10px; right: -10px; width: 54px; height: 54px; border-radius: 50%; filter: blur(0.5px); opacity: 0.9; }
 .podium .gold { background: radial-gradient(circle at 35% 35%, #fff6d6, var(--gold)); }
