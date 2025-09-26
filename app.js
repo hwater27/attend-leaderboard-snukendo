@@ -116,7 +116,27 @@
   function renderTable(ranked) {
     tableBody.innerHTML = '';
     let count = 0;
-    for (const item of ranked) {
+    // Determine separator position only in +Events mode
+    let insertAt = -1;
+    const threshold = Number(cfg.THRESHOLD);
+    if (currentMode() === 'plus' && Number.isFinite(threshold)) {
+      for (let i = 0; i < ranked.length; i++) {
+        if (Number(ranked[i].effective) < threshold) { insertAt = i; break; }
+      }
+      if (!(insertAt > 0 && insertAt < ranked.length)) insertAt = -1; // must be between two people
+    }
+
+    for (let i = 0; i < ranked.length; i++) {
+      const item = ranked[i];
+      if (i === insertAt) {
+        const sep = document.createElement('tr');
+        sep.className = 'sep-row';
+        const td = document.createElement('td');
+        td.colSpan = 3;
+        td.innerHTML = `<div class="separator"><div class="line"></div><div class="bubble">동경대 교류전을 위한 최소 참여 조건은 출석 ${threshold}회입니다!</div></div>`;
+        sep.appendChild(td);
+        tableBody.appendChild(sep);
+      }
       const tr = document.createElement('tr');
       const scoreHtml = (currentMode() === 'plus')
         ? `<span class="score-total">${item.effective}</span><span class="score-details">(${item.attendance}+${item.events || 0})</span>`

@@ -19,5 +19,8 @@ window.LEADERBOARD_CONFIG = {
 
   // Optional: override site title
   TITLE: "Snukendo Attendance Leaderboard"
+  ,
+  // Threshold for +Events mode separator line (change this single number)
+  THRESHOLD: 8
 };
 

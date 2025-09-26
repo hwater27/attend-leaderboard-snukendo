@@ -137,6 +137,32 @@ body {
 .table .score-cell { text-align: right; font-weight: 800; }
 .table .score-cell .score-details { margin-left: 6px; }
 
+/* Threshold separator (only used in +Events mode) */
+.sep-row td { border-top: none; padding: 0; }
+.separator {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+.separator .line {
+  height: 2px;
+  background: #ef4444; /* pleasant red */
+  width: 100%;
+  opacity: 0.9;
+}
+.separator .bubble {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .skeleton td { color: var(--muted); }
 
 .site-footer { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 36px 0 48px; color: var(--muted); }
