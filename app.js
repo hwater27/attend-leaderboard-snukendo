@@ -9,6 +9,8 @@
   const searchInput = g('#searchInput');
   const refreshBtn = g('#refreshBtn');
   const configHint = g('#configHint');
+  const modeSwitch = g('#modeSwitch');
+  const scoreHeader = g('#scoreHeader');
 
   if (cfg.TITLE) {
     document.title = cfg.TITLE;
@@ -38,17 +40,19 @@
   function indexColumns(cols) {
     const wantName = (cfg.COLUMNS && cfg.COLUMNS.name) ? cfg.COLUMNS.name.toLowerCase() : 'name';
     const wantAttendance = (cfg.COLUMNS && cfg.COLUMNS.attendance) ? cfg.COLUMNS.attendance.toLowerCase() : 'attendance';
-    let nameIdx = -1, attendanceIdx = -1;
+    const wantEvents = (cfg.COLUMNS && cfg.COLUMNS.events) ? cfg.COLUMNS.events.toLowerCase() : null;
+    let nameIdx = -1, attendanceIdx = -1, eventsIdx = -1;
     cols.forEach((c, i) => {
       const lc = (c || '').toLowerCase();
       if (nameIdx === -1 && lc === wantName) nameIdx = i;
       if (attendanceIdx === -1 && lc === wantAttendance) attendanceIdx = i;
+      if (wantEvents && eventsIdx === -1 && lc === wantEvents) eventsIdx = i;
     });
-    return { nameIdx, attendanceIdx };
+    return { nameIdx, attendanceIdx, eventsIdx };
   }
 
   function toEntries(cols, rows) {
-    const { nameIdx, attendanceIdx } = indexColumns(cols);
+    const { nameIdx, attendanceIdx, eventsIdx } = indexColumns(cols);
     if (nameIdx === -1 || attendanceIdx === -1) {
       throw new Error('Could not find required columns. Check config.js COLUMNS.');
     }
@@ -57,25 +61,31 @@
     for (const r of rows) {
       const name = String(r[nameIdx] ?? '').trim();
       const attendance = Number(r[attendanceIdx] ?? 0);
+      const events = eventsIdx >= 0 ? Number(r[eventsIdx] ?? 0) : 0;
       if (!name) continue;
-      entries.push({ name, attendance });
+      entries.push({ name, attendance, events });
     }
     return entries;
   }
 
-  function rankEntries(entries) {
+  function rankEntries(entries, mode) {
+    const usePlus = mode === 'plus';
+    const scored = entries.map(e => ({
+      ...e,
+      effective: usePlus ? Number(e.attendance) + Number(e.events || 0) : Number(e.attendance)
+    }));
     // Sort desc by attendance, then name asc
-    const sorted = [...entries].sort((a, b) => {
-      if (b.attendance !== a.attendance) return b.attendance - a.attendance;
+    const sorted = [...scored].sort((a, b) => {
+      if (b.effective !== a.effective) return b.effective - a.effective;
       return a.name.localeCompare(b.name);
     });
     // Assign ranks with ties
     let lastScore = null;
     let lastRank = 0;
     return sorted.map((e, idx) => {
-      if (e.attendance !== lastScore) {
+      if (e.effective !== lastScore) {
         lastRank = idx + 1;
-        lastScore = e.attendance;
+        lastScore = e.effective;
       }
       return { ...e, rank: lastRank };
     });
@@ -94,7 +104,7 @@
         <div class="medal ${medalClass[i]}" aria-hidden="true"></div>
         <div class="rank">${labels[i]}</div>
         <div class="name">${escapeHtml(item.name)}</div>
-        <div class="score">${item.attendance}</div>
+        <div class="score">${item.effective}</div>
       `;
       podium.appendChild(card);
     }
@@ -108,7 +118,7 @@
       tr.innerHTML = `
         <td class="rank-cell">${item.rank}</td>
         <td class="name-cell">${escapeHtml(item.name)}</td>
-        <td class="score-cell">${item.attendance}</td>
+        <td class="score-cell">${item.effective}</td>
       `;
       tableBody.appendChild(tr);
       count++;
@@ -128,18 +138,33 @@
     return entries.filter(e => e.name.toLowerCase().includes(needle));
   }
 
+  let cachedEntries = null;
+
+  function currentMode() {
+    return (modeSwitch && modeSwitch.getAttribute('data-mode') === 'plus') ? 'plus' : 'base';
+  }
+
+  function updateScoreHeader() {
+    if (!scoreHeader) return;
+    scoreHeader.textContent = currentMode() === 'plus' ? 'Attendance (+Events)' : 'Attendance';
+  }
+
   async function refresh() {
     tableBody.innerHTML = '<tr class="skeleton"><td colspan="3">Loading…</td></tr>';
     podium.innerHTML = '';
     try {
-      const { cols, rows } = await fetchSheetData();
-      let entries = toEntries(cols, rows);
+      if (!cachedEntries) {
+        const { cols, rows } = await fetchSheetData();
+        cachedEntries = toEntries(cols, rows);
+      }
+      let entries = cachedEntries;
       const query = searchInput.value || '';
       entries = filterEntries(entries, query);
-      const ranked = rankEntries(entries);
+      const ranked = rankEntries(entries, currentMode());
       renderPodium(ranked);
       renderTable(ranked);
       updatedAt.textContent = 'Updated ' + new Date().toLocaleString();
+      updateScoreHeader();
     } catch (err) {
       console.error(err);
       updatedAt.textContent = '';
@@ -149,6 +174,28 @@
 
   searchInput.addEventListener('input', () => refresh());
   refreshBtn.addEventListener('click', () => refresh());
+
+  if (modeSwitch) {
+    const toggle = () => {
+      const mode = currentMode() === 'base' ? 'plus' : 'base';
+      modeSwitch.setAttribute('data-mode', mode);
+      modeSwitch.setAttribute('aria-pressed', mode === 'plus' ? 'true' : 'false');
+      updateScoreHeader();
+      // Re-render using cached data
+      if (cachedEntries) {
+        let entries = filterEntries(cachedEntries, searchInput.value || '');
+        const ranked = rankEntries(entries, currentMode());
+        renderPodium(ranked);
+        renderTable(ranked);
+      } else {
+        refresh();
+      }
+    };
+    modeSwitch.addEventListener('click', toggle);
+    modeSwitch.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  }
 
   // Initial load
   refresh();

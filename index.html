@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SNUKendo Attendance Leaderboard</title>
-    <meta name="description" content="Practice attendance ranking for Snukendo Kendo Club" />
+    <meta name="description" content="Practice attendance ranking for SNU Kendo Club" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -34,6 +34,11 @@
             <span>Search</span>
             <input id="searchInput" type="search" placeholder="Find a member" autocomplete="off" />
           </label>
+          <div class="mode-switch" id="modeSwitch" data-mode="base" role="button" aria-pressed="false" tabindex="0" title="Toggle: Base / +Events">
+            <span class="label base">Base</span>
+            <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+            <span class="label plus">+Events</span>
+          </div>
           <button id="refreshBtn" class="btn" type="button">Refresh</button>
         </div>
       </section>
@@ -57,7 +62,7 @@
                 <tr>
                   <th scope="col">#</th>
                   <th scope="col">Member</th>
-                  <th scope="col">Attendance</th>
+                  <th scope="col" id="scoreHeader">Attendance</th>
                 </tr>
               </thead>
               <tbody id="tableBody">

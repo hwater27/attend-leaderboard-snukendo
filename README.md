@@ -14,36 +14,14 @@ Edit `config.js`:
 window.LEADERBOARD_CONFIG = {
   SHEET_ID: "YOUR_SHEET_ID",
   GID: "0",
-  COLUMNS: { name: "Name", attendance: "Attendance" },
-  TITLE: "Snukendo Attendance Leaderboard"
-};
-```
-
-Column names must exactly match your sheet headers (case-insensitive).
-
-## 3) Run locally
-Just open `index.html` in your browser. If the sheet is public/viewable, the data will load.
-
-If your browser blocks cross-origin requests from a local file, you can run a quick static server:
-
-```bash
-# Python 3
-python -m http.server 8080
-# then open http://localhost:8080
-```
-
-## 4) Deploy to Netlify
-1. Commit and push this repo to GitHub
-2. In Netlify, choose "Add new site" → "Import an existing project"
-3. Select your GitHub repo, leave build settings empty (no build step), and set Publish directory to the repo root
-4. Deploy. Your site will be live at `https://<yoursite>.netlify.app`
-
-Optional: add a custom domain in Netlify.
+  COLUMNS: { name: "Name", attendance: "Attendance", events: "Events" },
+}
 
 ## Data format
 Minimum columns:
 - `Name`: string
 - `Attendance`: number (total sessions)
+- Optional `Events`: number (extra sessions)
 
 Extra columns are ignored.
 
@@ -51,3 +29,4 @@ Extra columns are ignored.
 - Ranks handle ties (same attendance → same rank)
 - Top 3 are highlighted with gold/silver/bronze
 - Search filters by member name in real time
+ - Toggle between Base and +Events using the switch next to Search

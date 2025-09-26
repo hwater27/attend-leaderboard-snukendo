@@ -13,7 +13,8 @@ window.LEADERBOARD_CONFIG = {
   // Column labels in your sheet for Name and Attendance total
   COLUMNS: {
     name: "Name",
-    attendance: "Attendance"
+    attendance: "Attendance",
+    events: "Events" // optional; if present, used for +Events mode
   },
 
   // Optional: override site title
