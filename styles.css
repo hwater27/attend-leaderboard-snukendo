@@ -106,6 +106,8 @@ body {
 .podium .rank { font-weight: 800; font-size: 14px; color: var(--muted); }
 .podium .name { margin: 8px 0 6px; font-weight: 700; font-size: 18px; }
 .podium .score { font-weight: 800; font-size: 28px; letter-spacing: -0.02em; }
+.score-total { color: var(--text); }
+.score-details { color: var(--muted); margin-left: 6px; font-weight: 700; font-size: 0.8em; }
 
 .podium .medal { position: absolute; top: -10px; right: -10px; width: 54px; height: 54px; border-radius: 50%; filter: blur(0.5px); opacity: 0.9; }
 .podium .gold { background: radial-gradient(circle at 35% 35%, #fff6d6, var(--gold)); }
@@ -133,6 +135,7 @@ body {
 .table .rank-cell { width: 56px; color: var(--muted); font-weight: 700; }
 .table .name-cell { font-weight: 600; }
 .table .score-cell { text-align: right; font-weight: 800; }
+.table .score-cell .score-details { margin-left: 6px; }
 
 .skeleton td { color: var(--muted); }
 

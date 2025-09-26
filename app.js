@@ -100,11 +100,14 @@
       const item = top3[i];
       const card = document.createElement('div');
       card.className = 'podium-card';
+      const scoreHtml = (currentMode() === 'plus')
+        ? `<span class="score-total">${item.effective}</span><span class="score-details">(${item.attendance}+${item.events || 0})</span>`
+        : `<span class="score-total">${item.effective}</span>`;
       card.innerHTML = `
         <div class="medal ${medalClass[i]}" aria-hidden="true"></div>
         <div class="rank">${labels[i]}</div>
         <div class="name">${escapeHtml(item.name)}</div>
-        <div class="score">${item.effective}</div>
+        <div class="score">${scoreHtml}</div>
       `;
       podium.appendChild(card);
     }
@@ -115,10 +118,13 @@
     let count = 0;
     for (const item of ranked) {
       const tr = document.createElement('tr');
+      const scoreHtml = (currentMode() === 'plus')
+        ? `<span class="score-total">${item.effective}</span><span class="score-details">(${item.attendance}+${item.events || 0})</span>`
+        : `<span class="score-total">${item.effective}</span>`;
       tr.innerHTML = `
         <td class="rank-cell">${item.rank}</td>
         <td class="name-cell">${escapeHtml(item.name)}</td>
-        <td class="score-cell">${item.effective}</td>
+        <td class="score-cell">${scoreHtml}</td>
       `;
       tableBody.appendChild(tr);
       count++;
