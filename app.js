@@ -41,18 +41,20 @@
     const wantName = (cfg.COLUMNS && cfg.COLUMNS.name) ? cfg.COLUMNS.name.toLowerCase() : 'name';
     const wantAttendance = (cfg.COLUMNS && cfg.COLUMNS.attendance) ? cfg.COLUMNS.attendance.toLowerCase() : 'attendance';
     const wantEvents = (cfg.COLUMNS && cfg.COLUMNS.events) ? cfg.COLUMNS.events.toLowerCase() : null;
-    let nameIdx = -1, attendanceIdx = -1, eventsIdx = -1;
+    const wantBoard = (cfg.COLUMNS && cfg.COLUMNS.board) ? cfg.COLUMNS.board.toLowerCase() : null;
+    let nameIdx = -1, attendanceIdx = -1, eventsIdx = -1, boardIdx = -1;
     cols.forEach((c, i) => {
       const lc = (c || '').toLowerCase();
       if (nameIdx === -1 && lc === wantName) nameIdx = i;
       if (attendanceIdx === -1 && lc === wantAttendance) attendanceIdx = i;
       if (wantEvents && eventsIdx === -1 && lc === wantEvents) eventsIdx = i;
+      if (wantBoard && boardIdx === -1 && lc === wantBoard) boardIdx = i;
     });
-    return { nameIdx, attendanceIdx, eventsIdx };
+    return { nameIdx, attendanceIdx, eventsIdx, boardIdx };
   }
 
   function toEntries(cols, rows) {
-    const { nameIdx, attendanceIdx, eventsIdx } = indexColumns(cols);
+    const { nameIdx, attendanceIdx, eventsIdx, boardIdx } = indexColumns(cols);
     if (nameIdx === -1 || attendanceIdx === -1) {
       throw new Error('Could not find required columns. Check config.js COLUMNS.');
     }
@@ -62,8 +64,10 @@
       const name = String(r[nameIdx] ?? '').trim();
       const attendance = Number(r[attendanceIdx] ?? 0);
       const events = eventsIdx >= 0 ? Number(r[eventsIdx] ?? 0) : 0;
+      const boardRaw = boardIdx >= 0 ? (r[boardIdx] ?? '') : '';
+      const isBoard = String(boardRaw).trim().toLowerCase() === 'o';
       if (!name) continue;
-      entries.push({ name, attendance, events });
+      entries.push({ name, attendance, events, isBoard });
     }
     return entries;
   }
@@ -79,21 +83,29 @@
       if (b.effective !== a.effective) return b.effective - a.effective;
       return a.name.localeCompare(b.name);
     });
-    // Assign ranks with ties
-    let lastScore = null;
+    // Assign ranks with ties, excluding board members from rank counting
+    let lastNonBoardScore = null;
     let lastRank = 0;
-    return sorted.map((e, idx) => {
-      if (e.effective !== lastScore) {
-        lastRank = idx + 1;
-        lastScore = e.effective;
+    let nonBoardCount = 0;
+    const out = [];
+    for (const e of sorted) {
+      if (e.isBoard) {
+        out.push({ ...e, rank: null });
+        continue;
       }
-      return { ...e, rank: lastRank };
-    });
+      if (e.effective !== lastNonBoardScore) {
+        lastRank = nonBoardCount + 1;
+        lastNonBoardScore = e.effective;
+      }
+      nonBoardCount += 1;
+      out.push({ ...e, rank: lastRank });
+    }
+    return out;
   }
 
   function renderPodium(ranked) {
     podium.innerHTML = '';
-    const top3 = ranked.slice(0, 3);
+    const top3 = ranked.filter(i => !i.isBoard).slice(0, 3);
     const medalClass = ['gold', 'silver', 'bronze'];
     const labels = ['1st', '2nd', '3rd'];
     for (let i = 0; i < top3.length; i++) {
@@ -142,7 +154,7 @@
         ? `<span class="score-total">${item.effective}</span><span class="score-details">(${item.attendance}+<span class=\"events-count\">${item.events || 0}</span>)</span>`
         : `<span class="score-total">${item.effective}</span>`;
       tr.innerHTML = `
-        <td class="rank-cell">${item.rank}</td>
+        <td class="rank-cell">${item.isBoard ? '(임원)' : item.rank}</td>
         <td class="name-cell">${escapeHtml(item.name)}</td>
         <td class="score-cell">${scoreHtml}</td>
       `;

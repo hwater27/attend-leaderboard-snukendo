@@ -14,7 +14,8 @@ window.LEADERBOARD_CONFIG = {
   COLUMNS: {
     name: "Name",
     attendance: "Attendance",
-    events: "Events" // optional; if present, used for +Events mode
+    events: "Events", // optional; if present, used for +Events mode
+    board: "Board Member" // optional; 'o' means board member
   },
 
   // Optional: override site title
