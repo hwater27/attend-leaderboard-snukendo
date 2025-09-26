@@ -154,7 +154,7 @@
         ? `<span class="score-total">${item.effective}</span><span class="score-details">(${item.attendance}+<span class=\"events-count\">${item.events || 0}</span>)</span>`
         : `<span class="score-total">${item.effective}</span>`;
       tr.innerHTML = `
-        <td class="rank-cell">${item.isBoard ? '(임원)' : item.rank}</td>
+        <td class="rank-cell">${item.isBoard ? '<span class="tag-board">임원</span>' : item.rank}</td>
         <td class="name-cell">${escapeHtml(item.name)}</td>
         <td class="score-cell">${scoreHtml}</td>
       `;

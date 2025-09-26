@@ -134,6 +134,14 @@ body {
 
 .table tbody tr:hover { background: rgba(255,255,255,0.04); }
 .table .rank-cell { width: 56px; color: var(--muted); font-weight: 700; }
+.table .rank-cell .tag-board {
+  display: inline-block;
+  transform: scale(0.88);
+  transform-origin: left center;
+  color: var(--muted);
+  font-weight: 700;
+  white-space: nowrap;
+}
 .table .name-cell { font-weight: 600; }
 .table .score-cell { text-align: right; font-weight: 800; }
 .table .score-cell .score-details { margin-left: 6px; }
