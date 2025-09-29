@@ -30,6 +30,10 @@
           Configure your Google Sheet in <code>config.js</code> and refresh.
         </div>
         <div class="actions">
+          <div class="term-select" id="termSelect">
+            <button id="termButton" class="btn term-btn" type="button" aria-haspopup="listbox" aria-expanded="false">학기 선택</button>
+            <div id="termList" class="term-list" role="listbox" tabindex="-1" hidden></div>
+          </div>
           <label class="input-group">
             <span>Search</span>
             <input id="searchInput" type="search" placeholder="Find a member" autocomplete="off" />

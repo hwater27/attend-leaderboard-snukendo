@@ -9,6 +9,9 @@ window.LEADERBOARD_CONFIG = {
 
   // Sheet gid: found at the end of the URL (?gid=123456789); use the tab you want (numbers only)
   GID: "0",
+  // Optional: sheet name (tab name). If provided, this will be used instead of GID.
+  // Example: SHEET_NAME: "2025 Fall"
+  SHEET_NAME: "",
 
   // Column labels in your sheet for Name and Attendance total
   COLUMNS: {

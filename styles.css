@@ -76,6 +76,21 @@ body {
 }
 .btn:hover { filter: brightness(1.05); }
 
+/* Term selector */
+.term-select { position: relative; }
+.term-btn { background: transparent; border: 1px solid var(--card-border); color: var(--text); }
+.term-list { position: absolute; z-index: 20; top: 42px; left: 0; min-width: 180px; max-height: 280px; overflow: auto; background: var(--bg-2); border: 1px solid var(--card-border); border-radius: 10px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+.term-list .term-item { display: block; width: 100%; text-align: left; padding: 8px 10px; border-radius: 8px; color: var(--text); background: transparent; border: none; cursor: pointer; font-size: 13px; }
+.term-list .term-item[aria-selected="true"], .term-list .term-item:hover { background: rgba(255,255,255,0.08); }
+.term-list .term-item.current-term,
+.term-list .term-item.current-term[aria-selected="true"] {
+  background: rgba(251, 191, 36, 0.18); /* gold-like */
+  border: 1px solid rgba(251, 191, 36, 0.40);
+}
+
+/* Empty state */
+.empty { margin: 16px 0; padding: 12px 14px; border-radius: 12px; border: 1px dashed var(--card-border); color: var(--muted); background: rgba(255,255,255,0.04); }
+
 /* Sliding mode switch */
 .mode-switch {
   display: inline-flex;

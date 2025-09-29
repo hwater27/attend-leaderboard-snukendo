@@ -12,6 +12,8 @@
   const modeSwitch = g('#modeSwitch');
   const scoreHeader = g('#scoreHeader');
   const pager = g('#pager');
+  const termButton = document.getElementById('termButton');
+  const termListEl = document.getElementById('termList');
 
   const PAGE_SIZE = 10;
   let currentPage = 1;
@@ -61,10 +63,14 @@
     configHint.hidden = false;
   }
 
-  async function fetchSheetData() {
+  async function fetchSheetData(sheetNameOverride) {
     if (!cfg.SHEET_ID) throw new Error('Missing SHEET_ID in config.js');
+    const nameFromCfg = cfg.SHEET_NAME && String(cfg.SHEET_NAME).trim().length > 0 ? String(cfg.SHEET_NAME).trim() : '';
+    const useName = (sheetNameOverride && String(sheetNameOverride).trim().length > 0) ? String(sheetNameOverride).trim() : nameFromCfg;
     const gid = cfg.GID || '0';
-    const url = `https://docs.google.com/spreadsheets/d/${cfg.SHEET_ID}/gviz/tq?tqx=out:json&gid=${gid}`;
+    const tqx = 'out:json';
+    const sheetParam = useName ? `sheet=${encodeURIComponent(useName)}` : `gid=${gid}`;
+    const url = `https://docs.google.com/spreadsheets/d/${cfg.SHEET_ID}/gviz/tq?tqx=${tqx}&${sheetParam}`;
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to fetch sheet: ' + res.status);
     const txt = await res.text();
@@ -103,8 +109,8 @@
       const name = String(r[nameIdx] ?? '').trim();
       const attendance = Number(r[attendanceIdx] ?? 0);
       const events = eventsIdx >= 0 ? Number(r[eventsIdx] ?? 0) : 0;
-      const boardRaw = boardIdx >= 0 ? (r[boardIdx] ?? '') : '';
-      const isBoard = String(boardRaw).trim().toLowerCase() === 'o';
+      const boardCell = boardIdx >= 0 ? (r[boardIdx] ?? '') : '';
+      const isBoard = (boardCell === true) || (String(boardCell).trim().toLowerCase() === 'o') || (String(boardCell).trim().toLowerCase() === 'true');
       if (!name) continue;
       entries.push({ name, attendance, events, isBoard });
     }
@@ -164,24 +170,16 @@
     }
   }
 
-  function renderTable(ranked) {
+  function renderTable(ranked, thresholdIdx) {
     tableBody.innerHTML = '';
     let count = 0;
     const startIdx = (currentPage - 1) * PAGE_SIZE;
     const endIdx = Math.min(startIdx + PAGE_SIZE, ranked.length);
-    // Determine separator position only in +Events mode
-    let insertAt = -1;
     const threshold = Number(cfg.THRESHOLD);
-    if (currentMode() === 'plus' && Number.isFinite(threshold)) {
-      for (let i = 0; i < ranked.length; i++) {
-        if (Number(ranked[i].effective) < threshold) { insertAt = i; break; }
-      }
-      if (!(insertAt > 0 && insertAt < ranked.length)) insertAt = -1; // must be between two people
-    }
 
     for (let i = startIdx; i < endIdx; i++) {
       const item = ranked[i];
-      if (i === insertAt) {
+      if (currentMode() === 'plus' && Number.isFinite(threshold) && typeof thresholdIdx === 'number' && item && item._idx === thresholdIdx) {
         const sep = document.createElement('tr');
         sep.className = 'sep-row';
         const td = document.createElement('td');
@@ -217,7 +215,64 @@
     return entries.filter(e => e.name.toLowerCase().includes(needle));
   }
 
+  function filterRanked(ranked, q) {
+    if (!q) return ranked;
+    const needle = q.toLowerCase();
+    return ranked.filter(e => e.name.toLowerCase().includes(needle));
+  }
+
   let cachedEntries = null;
+  let _rankedAll = [];
+  let _rankedFiltered = [];
+  let _thresholdIdx = -1;
+  let selectedTerm = '';
+  let defaultTerm = '';
+
+  function computeDefaultTerm(now = new Date()) {
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1; // 1-12
+    if (m >= 3 && m <= 8) return `${y}-1`;
+    if (m >= 9) return `${y}-2`;
+    return `${y - 1}-2`; // Jan-Feb -> previous year's second semester
+  }
+
+  function buildTermList(startYear = 2024) {
+    const terms = [];
+    const now = new Date();
+    const end = computeDefaultTerm(now);
+    const [endY, endS] = end.split('-').map((v, i) => i === 0 ? parseInt(v, 10) : parseInt(v, 10));
+    for (let y = startYear; y <= endY; y++) {
+      terms.push(`${y}-1`);
+      if (y < endY || (y === endY && endS === 2)) terms.push(`${y}-2`);
+    }
+    return terms;
+  }
+
+  function renderTermList(terms) {
+    if (!termListEl || !termButton) return;
+    termListEl.innerHTML = '';
+    for (const term of terms) {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'term-item';
+      item.setAttribute('role', 'option');
+      if (term === defaultTerm) item.classList.add('current-term');
+      if (term === selectedTerm) item.setAttribute('aria-selected', 'true');
+      item.textContent = term;
+      item.addEventListener('click', () => {
+        termListEl.hidden = true;
+        termButton.setAttribute('aria-expanded', 'false');
+        if (selectedTerm !== term) {
+          selectedTerm = term;
+          termButton.textContent = term;
+          currentPage = 1;
+          cachedEntries = null; // force refetch for new sheet
+          refresh();
+        }
+      });
+      termListEl.appendChild(item);
+    }
+  }
 
   function currentMode() {
     return (modeSwitch && modeSwitch.getAttribute('data-mode') === 'plus') ? 'plus' : 'base';
@@ -233,25 +288,37 @@
     podium.innerHTML = '';
     try {
       if (!cachedEntries) {
-        const { cols, rows } = await fetchSheetData();
+        const { cols, rows } = await fetchSheetData(selectedTerm);
         cachedEntries = toEntries(cols, rows);
       }
-      let entries = cachedEntries;
       const query = searchInput.value || '';
-      entries = filterEntries(entries, query);
-      const ranked = rankEntries(entries, currentMode());
+      // Compute global ranking first
+      _rankedAll = rankEntries(cachedEntries, currentMode()).map((e, idx) => ({ ...e, _idx: idx }));
+      // Compute global threshold index on full ranking
+      _thresholdIdx = -1;
+      if (currentMode() === 'plus' && Number.isFinite(Number(cfg.THRESHOLD))) {
+        for (let i = 0; i < _rankedAll.length; i++) {
+          if (Number(_rankedAll[i].effective) < Number(cfg.THRESHOLD)) { _thresholdIdx = i; break; }
+        }
+        if (!(_thresholdIdx > 0 && _thresholdIdx < _rankedAll.length)) _thresholdIdx = -1;
+      }
+      // Then filter for display
+      _rankedFiltered = filterRanked(_rankedAll, query);
       // Clamp current page within bounds in case the result count changed
-      const pages = totalPages(ranked.length);
+      const pages = totalPages(_rankedFiltered.length);
       if (currentPage > pages) currentPage = pages;
-      renderPodium(ranked);
-      renderTable(ranked);
-      renderPager(ranked.length);
+      renderPodium(_rankedAll);
+      renderTable(_rankedFiltered, _thresholdIdx);
+      renderPager(_rankedFiltered.length);
       updatedAt.textContent = 'Updated ' + new Date().toLocaleString();
       updateScoreHeader();
     } catch (err) {
       console.error(err);
       updatedAt.textContent = '';
-      tableBody.innerHTML = '<tr><td colspan="3">Failed to load data. Check config.js and sharing settings.</td></tr>';
+      const message = (selectedTerm && selectedTerm === defaultTerm)
+        ? '본 학기의 출석 리더보드는 아직 제공되지 않습니다.'
+        : 'Failed to load data. Check config.js and sharing settings.';
+      tableBody.innerHTML = `<tr><td colspan="3">${message}</td></tr>`;
     }
   }
 
@@ -267,11 +334,19 @@
       // Re-render using cached data
       if (cachedEntries) {
         currentPage = 1;
-        let entries = filterEntries(cachedEntries, searchInput.value || '');
-        const ranked = rankEntries(entries, currentMode());
-        renderPodium(ranked);
-        renderTable(ranked);
-        renderPager(ranked.length);
+        const query = searchInput.value || '';
+        _rankedAll = rankEntries(cachedEntries, currentMode()).map((e, idx) => ({ ...e, _idx: idx }));
+        _thresholdIdx = -1;
+        if (currentMode() === 'plus' && Number.isFinite(Number(cfg.THRESHOLD))) {
+          for (let i = 0; i < _rankedAll.length; i++) {
+            if (Number(_rankedAll[i].effective) < Number(cfg.THRESHOLD)) { _thresholdIdx = i; break; }
+          }
+          if (!(_thresholdIdx > 0 && _thresholdIdx < _rankedAll.length)) _thresholdIdx = -1;
+        }
+        _rankedFiltered = filterRanked(_rankedAll, query);
+        renderPodium(_rankedAll);
+        renderTable(_rankedFiltered, _thresholdIdx);
+        renderPager(_rankedFiltered.length);
       } else {
         refresh();
       }
@@ -283,6 +358,26 @@
   }
 
   // Initial load
+  // Initialize term selector
+  defaultTerm = computeDefaultTerm();
+  selectedTerm = defaultTerm;
+  if (termButton && termListEl) {
+    termButton.textContent = selectedTerm;
+    const terms = buildTermList(2024);
+    renderTermList(terms);
+    termButton.addEventListener('click', () => {
+      const expanded = termButton.getAttribute('aria-expanded') === 'true';
+      termButton.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      termListEl.hidden = expanded;
+    });
+    document.addEventListener('click', (e) => {
+      if (!termListEl.hidden && !termListEl.contains(e.target) && !termButton.contains(e.target)) {
+        termListEl.hidden = true;
+        termButton.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
   refresh();
 })();
 
